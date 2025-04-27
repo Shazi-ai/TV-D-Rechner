@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TVöD Rechner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen">
+  <div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold text-center mb-6">TVöD Rechner</h1>
+    <div class="flex flex-col md:flex-row gap-4">
+      <!-- Formular -->
+      <div class="md:w-1/2">
+        <form id="salary-form" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium">Tarifbereich</label>
+            <select id="tariff-area" class="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700">
+              <option value="bund">Bund</option>
+              <option value="vka">Kommunen</option>
+              <option value="länder">Länder</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Entgeltgruppe</label>
+            <select id="pay-grade" class="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700">
+              <option value="E1">E1</option>
+              <option value="E2">E2</option>
+              <option value="E3">E3</option>
+              <option value="E4">E4</option>
+              <option value="E5">E5</option>
+              <option value="E6">E6</option>
+              <option value="E7">E7</option>
+              <option value="E8">E8</option>
+              <option value="E9a">E9a</option>
+              <option value="E9b">E9b</option>
+              <option value="E9c">E9c</option>
+              <option value="E10">E10</option>
+              <option value="E11">E11</option>
+              <option value="E12">E12</option>
+              <option value="E13">E13</option>
+              <option value="E14">E14</option>
+              <option value="E15">E15</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Erfahrungsstufe</label>
+            <select id="experience-level" class="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700">
+              <option value="1">Stufe 1</option>
+              <option value="2">Stufe 2</option>
+              <option value="3">Stufe 3</option>
+              <option value="4">Stufe 4</option>
+              <option value="5">Stufe 5</option>
+              <option value="6">Stufe 6</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Wöchentliche Arbeitsstunden</label>
+            <input type="number" id="weekly-hours" class="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700" value="39.83" min="0" step="0.01">
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Jahressonderzahlung einschließen</label>
+            <input type="checkbox" id="include-annual-special" class="mt-1">
+          </div>
+          <div>
+            <label class="block text-sm font-medium">Anzahl der Kinder</label>
+            <input type="number" id="children" class="w-full p-2 border rounded dark:bg-gray-800 dark:border-gray-700" value="0" min="0">
+          </div>
+          <button type="button" id="calculate-btn" class="w-full bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Berechnen</button>
+        </form>
+      </div>
+      <!-- Ergebnisse -->
+      <div class="md:w-1/2">
+        <div id="results" class="p-4 border rounded shadow bg-white dark:bg-gray-800">
+          <h2 class="text-xl font-bold mb-4">Ergebnisse</h2>
+          <div id="results-content">
+            <p class="text-gray-600 dark:text-gray-400">Bitte füllen Sie das Formular aus und klicken Sie auf "Berechnen", um die Ergebnisse zu sehen.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+      <p>* Diese Berechnung basiert auf einem vereinfachten Modell und berücksichtigt nicht die genauen Lohnsteuertabellen oder individuelle Umstände. Die tatsächlichen Abzüge können variieren.</p>
+    </div>
+  </div>
+  <script>
+    // Dunkelmodus-Erkennung
+    if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+      document.documentElement.classList.add('dark');
+    }
+
+    // Gehaltstabellen für 2025
+    const tvodBundTable = {
+      'E1': { '1': 2465.06, '2': 2501.78, '3': 2538.51, '4': 2630.30, '5': 2722.09, '6': 2813.88 },
+      'E2': { '1': 2642.84, '2': 2853.24, '3': 2917.80, '4': 2982.36, '5': 3130.84, '6': 3285.81 },
+      'E3': { '1': 2815.57, '2': 3040.47, '3': 3105.03, '4': 3208.32, '5': 3292.25, '6': 3363.27 },
+      'E4': { '1': 2849.24, '2': 3079.22, '3': 3240.61, '4': 3330.99, '5': 3421.39, '6': 3479.47 },
+      'E5': { '1': 2973.97, '2': 3201.87, '3': 3330.99, '4': 3453.66, '5': 3552.34, '6': 3618.92 },
+      'E6': { '1': 3086.57, '2': 3318.08, '3': 3447.20, '4': 3578.99, '5': 3665.52, '6': 3758.72 },
+      'E7': { '1': 3135.83, '2': 3369.72, '3': 3545.69, '4': 3678.84, '5': 3785.37, '6': 3878.56 },
+      'E8': { '1': 3319.52, '2': 3559.02, '3': 3692.14, '4': 3818.66, '5': 3958.47, '6': 4045.01 },
+      'E9a': { '1': 3520.10, '2': 3765.38, '3': 3818.66, '4': 3925.17, '5': 4366.72, '6': 4490.04 },
+      'E9b': { '1': 3520.10, '2': 3765.38, '3': 3925.17, '4': 4366.72, '5': 4742.32, '6': 4878.28 },
+      'E9c': { '1': 3520.10, '2': 3765.38, '3': 3925.17, '4': 4366.72, '5': 4742.32, '6': 4878.28 },
+      'E10': { '1': 3928.42, '2': 4182.83, '3': 4474.13, '4': 4771.29, '5': 5336.70, '6': 5490.47 },
+      'E11': { '1': 4064.54, '2': 4323.79, '3': 4619.10, '4': 5068.49, '5': 5720.84, '6': 5886.14 },
+      'E12': { '1': 4193.48, '2': 4474.13, '3': 5068.49, '4': 5590.37, '5': 6264.45, '6': 6446.05 },
+      'E13': { '1': 4629.74, '2': 4967.01, '3': 5220.71, '4': 5713.58, '5': 6394.91, '6': 6580.44 },
+      'E14': { '1': 5003.49, '2': 5365.66, '3': 5662.85, '4': 6112.24, '5': 6800.81, '6': 6998.52 },
+      'E15': { '1': 5504.26, '2': 5902.04, '3': 6112.24, '4': 6858.84, '5': 7424.19, '6': 7640.58 }
+    };
+
+    const tvodVKATable = {
+      'E1': { '1': 2465.06, '2': 2501.78, '3': 2538.51, '4': 2630.30, '5': 2722.09, '6': 2813.88 },
+      'E2': { '1': 2642.84, '2': 2853.24, '3': 2917.80, '4': 2982.36, '5': 3130.84, '6': 3285.81 },
+      'E3': { '1': 2815.57, '2': 3040.47, '3': 3105.03, '4': 3208.32, '5': 3292.25, '6': 3363.27 },
+      'E4': { '1': 2849.24, '2': 3079.22, '3': 3240.61, '4': 3330.99, '5': 3421.39, '6': 3479.47 },
+      'E5': { '1': 2973.97, '2': 3201.87, '3': 3330.99, '4': 3453.66, '5': 3552.34, '6': 3618.92 },
+      'E6': { '1': 3086.57, '2': 3318.08, '3': 3447.20, '4': 3578.99, '5': 3665.52, '6': 3758.72 },
+      'E7': { '1': 3135.83, '2': 3369.72, '3': 3545.69, '4': 3678.84, '5': 3785.37, '6': 3878.56 },
+      'E8': { '1': 3319.52, '2': 3559.02, '3': 3692.14, '4': 3818.66, '5': 3958.47, '6': 4045.01 },
+      'E9a': { '1': 3520.10, '2': 3765.38, '3': 3818.66, '4': 3925.17, '5': 4366.72, '6': 4490.04 },
+      'E9b': { '1': 3520.10, '2': 3765.38, '3': 3925.17, '4': 4366.72, '5': 4742.32, '6': 4878.28 },
+      'E9c': { '1': 3520.10, '2': 3765.38, '3': 3925.17, '4': 4366.72, '5': 4742.32, '6': 4878.28 },
+      'E10': { '1': 3928.42, '2': 4182.83, '3': 4474.13, '4': 4771.29, '5': 5336.70, '6': 5490.47 },
+      'E11': { '1': 4064.54, '2': 4323.79, '3': 4619.10, '4': 5068.49, '5': 5720.84, '6': 5886.14 },
+      'E12': { '1': 4193.48, '2': 4474.13, '3': 5068.49, '4': 5590.37, '5': 6264.45, '6': 6446.05 },
+      'E13': { '1': 4629.74, '2': 4967.01, '3': 5220.71, '4': 5713.58, '5': 6394.91, '6': 6580.44 },
+      'E14': { '1': 5003.49, '2': 5365.66, '3': 5662.85, '4': 6112.24, '5': 6800.81, '6': 6998.52 },
+      'E15': { '1': 5504.26, '2': 5902.04, '3': 6112.24, '4': 6858.84, '5': 7424.19, '6': 7640.58 }
+    };
+
+    const tvlTable = {
+      'E1': { '1': 2434.49, '2': 2465.06, '3': 2501.78, '4': 2538.51, '5': 2630.30, '6': 2722.09 },
+      'E2': { '1': 2642.84, '2': 2853.24, '3': 2917.80, '4': 2982.36, '5': 3130.84, '6': 3285.81 },
+      'E3': { '1': 2815.57, '2': 3040.47, '3': 3105.03, '4': 3208.32, '5': 3292.25, '6': 3363.27 },
+      'E4': { '1': 2849.24, '2': 3079.22, '3': 3240.61, '4': 3330.99, '5': 3421.39, '6': 3479.47 },
+      'E5': { '1': 2973.97, '2': 3201.87, '3': 3330.99, '4': 3453.66, '5': 3552.34, '6': 3618.92 },
+      'E6': { '1': 3086.57, '2': 3318.08, '3': 3447.20, '4': 3578.99, '5': 3665.52, '6': 3758.72 },
+      'E7': { '1': 3135.83, '2': 3369.72, '3': 3545.69, '4': 3678.84, '5': 3785.37, '6': 3878.56 },
+      'E8': { '1': 3319.52, '2': 3559.02, '3': 3692.14, '4': 3818.66, '5': 3958.47, '6': 4045.01 },
+      'E9a': { '1': 3520.10, '2': 3765.38, '3': 3818.66, '4': 3925.17, '5': 4366.72, '6': 4490.04 },
+      'E9b': { '1': 3520.10, '2': 3765.38, '3': 3925.17, '4': 4366.72, '5': 4742.32, '6': 4878.28 },
+      'E10': { '1': 3928.42, '2': 4182.83, '3': 4474.13, '4': 4771.29, '5': 5336.70, '6': 5490.47 },
+      'E11': { '1': 4064.54, '2': 4323.79, '3': 4619.10, '4': 5068.49, '5': 5720.84, '6': 5886.14 },
+      'E12': { '1': 4193.48, '2': 4474.13, '3': 5068.49, '4': 5590.37, '5': 6264.45, '6': 6446.05 },
+      'E13': { '1': 4629.74, '2': 4967.01, '3': 5220.71, '4': 5713.58, '5': 6394.91, '6': 6580.44 },
+      'E14': { '1': 5003.49, '2': 5365.66, '3': 5662.85, '4': 6112.24, '5': 6800.81, '6': 6998.52 },
+      'E15': { '1': 5504.26, '2': 5902.04, '3': 6112.24, '4': 6858.84, '5': 7424.19, '6': 7640.58 }
+    };
+
+    // Jahressonderzahlungsprozentsätze
+    const annualSpecialPercentages = {
+      'bund': { 'E1-E8': 0.90, 'E9a-E12': 0.80, 'E13-E15': 0.60 },
+      'vka': { 'E1-E8': 0.8451, 'E9a-E12': 0.7028, 'E13-E15': 0.5178 },
+      'länder': { 'E1-E4': 0.8743, 'E5-E8': 0.8814, 'E9-E11': 0.7435, 'E12-E13': 0.4647, 'E14-E15': 0.3253 }
+    };
+
+    // Funktion zur Ermittlung des Basismonatlichen Bruttogehalts
+    function getBaseMonthlyGross(tariffArea, payGrade, experienceLevel) {
+      let table;
+      if (tariffArea === 'bund') table = tvodBundTable;
+      else if (tariffArea === 'vka') table = tvodVKATable;
+      else if (tariffArea === 'länder') table = tvlTable;
+      return table[payGrade][experienceLevel] || 0;
+    }
+
+    // Funktion zur Ermittlung des Jahressonderzahlungsprozentsatzes
+    function getAnnualSpecialPercentage(tariffArea, payGrade) {
+      let percentages = annualSpecialPercentages[tariffArea];
+      if (!percentages) return 0;
+      let payGradeNum = parseInt(payGrade.replace('E', '')) || (payGrade.includes('E9') ? 9 : 0);
+      if (tariffArea === 'länder') {
+        if (payGradeNum <= 4) return percentages['E1-E4'];
+        else if (payGradeNum <= 8) return percentages['E5-E8'];
+        else if (payGradeNum <= 11) return percentages['E9-E11'];
+        else if (payGradeNum <= 13) return percentages['E12-E13'];
+        else return percentages['E14-E15'];
+      } else {
+        if (payGradeNum <= 8) return percentages['E1-E8'];
+        else if (payGradeNum <= 12) return percentages['E9a-E12'];
+        else return percentages['E13-E15'];
+      }
+    }
+
+    // Funktion zur Berechnung der jährlichen Einkommensteuer
+    function calculateAnnualIncomeTax(annualTaxableIncome) {
+      if (annualTaxableIncome <= 14643) {
+        return Math.floor(annualTaxableIncome * 0.14);
+      } else if (annualTaxableIncome <= 57918) {
+        return Math.floor(14643 * 0.14 + (annualTaxableIncome - 14643) * 0.2397 - 1000);
+      } else if (annualTaxableIncome <= 274612) {
+        let previous = Math.floor(14643 * 0.14 + (57918 - 14643) * 0.2397 - 1000);
+        return Math.floor(previous + (annualTaxableIncome - 57918) * 0.42 - 10000);
+      } else {
+        let previous = Math.floor(14643 * 0.14 + (57918 - 14643) * 0.2397 - 1000 + (274612 - 57918) * 0.42 - 10000);
+        return Math.floor(previous + (annualTaxableIncome - 274612) * 0.45);
+      }
+    }
+
+    // Funktion zur Währungsformatierung
+    function formatCurrency(amount) {
+      return amount.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' €';
+    }
+
+    // Hauptberechnungslogik
+    document.getElementById('calculate-btn').addEventListener('click', () => {
+      const tariffArea = document.getElementById('tariff-area').value;
+      const payGrade = document.getElementById('pay-grade').value;
+      const experienceLevel = document.getElementById('experience-level').value;
+      const weeklyHours = parseFloat(document.getElementById('weekly-hours').value) || 0;
+      const includeAnnualSpecial = document.getElementById('include-annual-special').checked;
+      const children = parseInt(document.getElementById('children').value) || 0;
+
+      // Basismonatliches Bruttogehalt
+      const baseMonthlyGross = getBaseMonthlyGross(tariffArea, payGrade, experienceLevel);
+      if (baseMonthlyGross === 0 || weeklyHours <= 0) {
+        document.getElementById('results-content').innerHTML = '<p class="text-red-500">Ungültige Eingaben oder Gehaltstabelle nicht verfügbar.</p>';
+        return;
+      }
+
+      // Anpassung an Arbeitsstunden
+      const standardHours = 39.83;
+      const monthlyGross = baseMonthlyGross * (weeklyHours / standardHours);
+
+      // Jahressonderzahlung
+      const percentage = getAnnualSpecialPercentage(tariffArea, payGrade);
+      const specialPayment = includeAnnualSpecial ? monthlyGross * percentage : 0;
+
+      // Jährliches Bruttogehalt
+      const annualGross = (monthlyGross * 12) + specialPayment;
+
+      // Sozialversicherungsbeiträge (vereinfacht)
+      const socialSecurityRate = 0.18;
+      const annualSocialSecurity = annualGross * socialSecurityRate;
+
+      // Freibeträge
+      const basicAllowance = 12096;
+      const childAllowance = 6672;
+      const totalAllowance = basicAllowance + (childAllowance * children);
+      const taxableIncome = Math.max(0, annualGross - totalAllowance);
+      const annualIncomeTax = calculateAnnualIncomeTax(taxableIncome);
+
+      // Nettoberechnung
+      const annualNet = annualGross - annualSocialSecurity - annualIncomeTax;
+      const monthlyNet = annualNet / 12;
+
+      // Ergebnisse anzeigen
+      document.getElementById('results-content').innerHTML = `
+        <table class="w-full text-left">
+          <tr>
+            <th>Monatliches Bruttogehalt:</th>
+            <td>${formatCurrency(monthlyGross)}</td>
+          </tr>
+          <tr>
+            <th>Jährliches Bruttogehalt:</th>
+            <td>${formatCurrency(annualGross)}</td>
+          </tr>
+          <tr>
+            <th>Sozialversicherung (jährlich):</th>
+            <td>${formatCurrency(annualSocialSecurity)}</td>
+          </tr>
+          <tr>
+            <th>Einkommensteuer (jährlich):</th>
+            <td>${formatCurrency(annualIncomeTax)}</td>
+          </tr>
+          <tr>
+            <th>Durchschnittliches monatliches Nettogehalt:</th>
+            <td>${formatCurrency(monthlyNet)}</td>
+          </tr>
+          <tr>
+            <th>Jährliches Nettogehalt:</th>
+            <td>${formatCurrency(annualNet)}</td>
+          </tr>
+        </table>
+      `;
+    });
+  </script>
+</body>
+</html>
